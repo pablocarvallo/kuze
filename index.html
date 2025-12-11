@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Control Negocio PWA</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Kuze Cueros">
+    <meta name="theme-color" content="#2563eb">
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --bg: #f3f4f6;
+            --text: #1f2937;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            padding-bottom: 80px;
+        }
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .container { padding: 1rem; max-width: 600px; margin: 0 auto;}
+        
+        /* Navegación simple tipo pestañas */
+        .nav-tabs { display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 1rem; }
+        .nav-tab { flex: 1; padding: 1rem; text-align: center; cursor: pointer; background: #fff; }
+        .nav-tab.active { border-bottom: 3px solid var(--primary); font-weight: bold; color: var(--primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Formularios */
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        input, select, textarea {
+            width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem;
+            box-sizing: border-box; font-size: 1rem;
+        }
+        textarea { resize: vertical; height: 80px; }
+        .btn-main {
+            width: 100%; padding: 1rem; background-color: var(--primary); color: white; border: none;
+            border-radius: 0.5rem; font-size: 1.1rem; font-weight: bold; cursor: pointer;
+        }
+        .btn-main:active { opacity: 0.9; }
+
+        /* Estilos de Reportes */
+        .report-controls { background: white; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;}
+        .btn-secondary { background-color: #4b5563; color: white; border:none; padding: 0.5rem 1rem; border-radius: 0.3rem; margin-right: 0.5rem; cursor: pointer;}
+        .date-range-inputs { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        
+        .summary-card {
+            background: white; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .card-ingreso { border-left: 5px solid var(--success); }
+        .card-gasto { border-left: 5px solid var(--danger); }
+        .card-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .card-total { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; }
+        .ingreso-text { color: var(--success); }
+        .gasto-text { color: var(--danger); }
+        .breakdown-item { display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid #eee; font-size: 0.9rem; color: #666;}
+
+        /* Estilos de la lista de transacciones */
+        .list-item-container {
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 0.75rem 0.5rem; border-bottom: 1px solid #eee;
+        }
+        .list-item-info {
+             flex-grow: 1; margin-right: 1rem;
+        }
+        .list-item-time {
+            font-weight: bold; font-size: 0.9rem;
+        }
+        .list-item-desc {
+            font-size: 0.85rem; color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <header>Kuze Cueros - Control</header>
+
+    <div class="nav-tabs">
+        <div class="nav-tab active" onclick="switchTab('registro')">Registrar</div>
+        <div class="nav-tab" onclick="switchTab('reportes')">Reportes</div>
+        <div class="nav-tab" onclick="switchTab('lista')">Ver/Borrar</div> </div>
+
+    <div class="container">
+        
+        <div id="tab-registro" class="tab-content active">
+            <div style="background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <div class="form-group">
+                    <label>Tipo de Transacción</label>
+                    <select id="tipoInput">
+                        <option value="ingreso">🟢 Ingreso (Venta)</option>
+                        <option value="gasto">🔴 Gasto (Compra/Insumo)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha</label>
+                    <input type="date" id="fechaInput"> </div>
+
+                 <div class="form-group">
+                    <label>Monto ($)</label>
+                    <input type="number" id="montoInput" placeholder="0.00" step="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label>Medio de Pago</label>
+                    <select id="metodoInput">
+                        <option value="efectivo">💵 Efectivo</option>
+                        <option value="tarjeta">💳 Tarjeta Débito/Crédito</option>
+                        <option value="transferencia">🏦 Transferencia</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Descripción / Notas</label>
+                    <textarea id="descripcionInput" placeholder="Ej: Venta de producto X..."></textarea>
+                </div>
+
+                <button class="btn-main" onclick="guardarTransaccionClick()">Guardar Transacción</button>
+            </div>
+        </div>
+
+        <div id="tab-reportes" class="tab-content">
+            
+            <div class="report-controls">
+                <p style="font-weight: bold; margin-top:0;">Generar Resumen:</p>
+                <button class="btn-secondary" onclick="reporteMesActual()">📅 Mes Actual (Día 1 a Hoy)</button>
+                
+                <div style="margin-top: 1rem; border-top: 1px solid #eee; padding-top: 1rem;">
+                    <label style="font-size: 0.9rem;">O rango personalizado:</label>
+                    <div class="date-range-inputs">
+                        <input type="date" id="fechaInicioReporte">
+                        <input type="date" id="fechaFinReporte">
+                    </div>
+                     <button class="btn-secondary" style="margin-top: 0.5rem; width: 100%;" onclick="reportePersonalizado()">🔍 Buscar Rango</button>
+                </div>
+            </div>
+
+            <div id="resultadosReporte">
+                <p style="text-align: center; color: #888;">Selecciona una opción arriba para ver el resumen.</p>
+            </div>
+
+        </div>
+
+        <div id="tab-lista" class="tab-content">
+            <h3 style="margin-top: 0;">Lista de Transacciones (Ver / Borrar)</h3>
+            
+            <div class="report-controls">
+                <label style="font-weight: bold; margin-bottom: 0.5rem;">Rango de Fechas a consultar:</label>
+                <div class="date-range-inputs">
+                    <input type="date" id="fechaInicioLista">
+                    <input type="date" id="fechaFinLista">
+                </div>
+                <button class="btn-secondary" style="margin-top: 0.5rem; width: 100%;" onclick="listarTransaccionesRango()">🔎 Ver Rango</button>
+            </div>
+
+            <div id="listaTransacciones">
+                <p style="text-align: center; color: #888;">Selecciona un rango de fechas para ver las transacciones.</p>
+            </div>
+        </div>
+        </div>
+
+
+    <script type="module">
+        // Importar funciones necesarias de Firebase v9+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs, Timestamp, doc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        // =================================================================
+        // --- CONFIGURACIÓN DE FIREBASE DEL USUARIO ---
+        // =================================================================
+        
+        const firebaseConfig = {
+          apiKey: "AIzaSyD6r9iUD6vm7dDPD6A5QV1cf7h2ceU3S_w",
+          authDomain: "ventas-b3c9f.firebaseapp.com",
+          projectId: "ventas-b3c9f",
+          storageBucket: "ventas-b3c9f.firebasestorage.app",
+          messagingSenderId: "136867364294",
+          appId: "1:136867364294:web:7a4998bee54065b0b806c7",
+          measurementId: "G-W28RV80ZV4"
+        };
+
+        let db; // Variable global para la base de datos
+
+        // Inicializar Firebase solo si hay configuración
+        try {
+            if (Object.keys(firebaseConfig).length === 0) {
+                 console.warn("⚠️ Firebase no está configurado. El guardado no funcionará.");
+                 alert("⚠️ ATENCIÓN: Debes configurar las credenciales de Firebase en el código HTML para que la app funcione realmente.");
+            } else {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                console.log("Firebase conectado correctamente");
+            }
+        } catch (e) {
+            console.error("Error inicializando Firebase:", e);
+        }
+
+
+        // ==========================================
+        // LÓGICA DE INTERFAZ (UI)
+        // ==========================================
+
+        // Poner fecha actual por defecto en el formulario y reportes al cargar
+        window.onload = function() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            
+            // FECHA POR DEFECTO PARA REGISTRO (SOLO FECHA)
+            document.getElementById('fechaInput').value = now.toISOString().slice(0,10);
+
+            // Fechas por defecto para reportes (hoy)
+            document.getElementById('fechaInicioReporte').valueAsDate = new Date();
+            document.getElementById('fechaFinReporte').valueAsDate = new Date();
+            
+            // Fechas por defecto para lista (hoy) - ACTUALIZADO
+            document.getElementById('fechaInicioLista').valueAsDate = new Date();
+            document.getElementById('fechaFinLista').valueAsDate = new Date();
+        };
+
+        // Cambiar entre pestañas
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.currentTarget.classList.add('active'); 
+        }
+
+        // Formateador de moneda
+        const formatter = new Intl.NumberFormat('es-CL', { 
+            style: 'currency',
+            currency: 'CLP', 
+            minimumFractionDigits: 0
+        });
+
+
+        // ==========================================
+        // LÓGICA DE BASE DE DATOS (GUARDAR)
+        // ==========================================
+
+        window.guardarTransaccionClick = async function() {
+            if(!db) { alert("Error: Firebase no está configurado."); return;}
+
+            const tipo = document.getElementById('tipoInput').value;
+            const fechaStr = document.getElementById('fechaInput').value; 
+            const montoStr = document.getElementById('montoInput').value;
+            const metodo = document.getElementById('metodoInput').value;
+            const descripcion = document.getElementById('descripcionInput').value;
+
+            // Validaciones simples
+            if (!fechaStr || !montoStr || montoStr <= 0) {
+                alert("Por favor ingresa una fecha válida y un monto mayor a 0.");
+                return;
+            }
+
+            const btn = document.querySelector('.btn-main');
+            btn.innerText = "Guardando...";
+            btn.disabled = true;
+
+            try {
+                // Crear una fecha para el registro que apunte al inicio del día (00:00:00)
+                const parts = fechaStr.split('-');
+                const fecha = new Date(parts[0], parts[1] - 1, parts[2]); // YYYY, MM-1, DD
+                fecha.setHours(0,0,0,0); 
+
+                await addDoc(collection(db, "transacciones"), {
+                    tipo: tipo,
+                    fecha: Timestamp.fromDate(fecha), 
+                    monto: parseFloat(montoStr),
+                    metodo_pago: metodo,
+                    descripcion: descripcion,
+                    creado_el: Timestamp.now()
+                });
+
+                alert("✅ Transacción guardada exitosamente.");
+                
+                // Limpiar campos clave
+                document.getElementById('montoInput').value = "";
+                document.getElementById('descripcionInput').value = "";
+                // Resetear fecha a ahora
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('fechaInput').value = now.toISOString().slice(0,10);
+
+
+            } catch (e) {
+                console.error("Error al guardar: ", e);
+                alert("❌ Error al guardar: " + e.message);
+            } finally {
+                btn.innerText = "Guardar Transacción";
+                btn.disabled = false;
+            }
+        }
+
+
+        // ==========================================
+        // LÓGICA DE REPORTES (CONSULTAR Y AGREGAR)
+        // ==========================================
+
+        async function generarDatosReporte(fechaInicioJs, fechaFinJs) {
+            if(!db) { alert("Error: Firebase no configurado"); return null; }
+
+            document.getElementById('resultadosReporte').innerHTML = "<p>Cargando datos...</p>";
+
+            // Asegurar comienzo y fin del día exactos (Necesario para que el rango funcione)
+            const start = new Date(fechaInicioJs); start.setHours(0,0,0,0);
+            const end = new Date(fechaFinJs); end.setHours(23,59,59,999);
+
+            const q = query(
+                collection(db, "transacciones"),
+                where("fecha", ">=", Timestamp.fromDate(start)),
+                where("fecha", "<=", Timestamp.fromDate(end))
+            );
+
+            const querySnapshot = await getDocs(q);
+            
+            let reporte = {
+                ingreso: { total: 0, tarjeta: 0, efectivo: 0, transferencia: 0, count: 0 },
+                gasto: { total: 0, tarjeta: 0, efectivo: 0, transferencia: 0, count: 0 }
+            };
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                
+                if (reporte[data.tipo]) {
+                    reporte[data.tipo].total += (data.monto || 0);
+                    reporte[data.tipo].count += 1;
+                    
+                    if (reporte[data.tipo][data.metodo_pago] !== undefined) {
+                        reporte[data.tipo][data.metodo_pago] += (data.monto || 0);
+                    }
+                }
+            });
+
+            return reporte;
+        }
+
+        function renderizarReporte(datos) {
+            const container = document.getElementById('resultadosReporte');
+            if (!datos || (datos.ingreso.count === 0 && datos.gasto.count === 0)) {
+                container.innerHTML = "<p style='text-align:center;'>No se encontraron transacciones en este rango de fechas.</p>";
+                return;
+            }
+
+            let html = '';
+
+            // Tarjeta de INGRESOS
+            html += `
+            <div class="summary-card card-ingreso">
+                <div class="card-title ingreso-text">🟢 Total Ingresos (${datos.ingreso.count})</div>
+                <div class="card-total ingreso-text">${formatter.format(datos.ingreso.total)}</div>
+                <div style="margin-top: 1rem;">
+                    <div class="breakdown-item"><span>💵 Efectivo:</span> <span>${formatter.format(datos.ingreso.efectivo)}</span></div>
+                    <div class="breakdown-item"><span>💳 Tarjeta:</span> <span>${formatter.format(datos.ingreso.tarjeta)}</span></div>
+                    <div class="breakdown-item"><span>🏦 Transferencia:</span> <span>${formatter.format(datos.ingreso.transferencia)}</span></div>
+                </div>
+            </div>`;
+
+            // Tarjeta de GASTOS
+            html += `
+            <div class="summary-card card-gasto">
+                <div class="card-title gasto-text">🔴 Total Gastos (${datos.gasto.count})</div>
+                <div class="card-total gasto-text">${formatter.format(datos.gasto.total)}</div>
+                <div style="margin-top: 1rem;">
+                    <div class="breakdown-item"><span>💵 Efectivo:</span> <span>${formatter.format(datos.gasto.efectivo)}</span></div>
+                    <div class="breakdown-item"><span>💳 Tarjeta:</span> <span>${formatter.format(datos.gasto.tarjeta)}</span></div>
+                    <div class="breakdown-item"><span>🏦 Transferencia:</span> <span>${formatter.format(datos.gasto.transferencia)}</span></div>
+                </div>
+            </div>`;
+            
+            // Balance simple
+            const balance = datos.ingreso.total - datos.gasto.total;
+            const balanceColor = balance >= 0 ? 'var(--success)' : 'var(--danger)';
+            html += `<div style="text-align: center; font-size: 1.2rem; font-weight: bold; margin-top: 1rem;">
+                Balance del periodo: <span style="color: ${balanceColor}">${formatter.format(balance)}</span>
+            </div>`;
+
+            container.innerHTML = html;
+        }
+
+        window.reporteMesActual = async function() {
+            const now = new Date();
+            const primerDiaDelMes = new Date(now.getFullYear(), now.getMonth(), 1);
+            const hoy = new Date();
+
+            const datos = await generarDatosReporte(primerDiaDelMes, hoy);
+            renderizarReporte(datos);
+        }
+
+        window.reportePersonalizado = async function() {
+            const inicioInput = document.getElementById('fechaInicioReporte').value;
+            const finInput = document.getElementById('fechaFinReporte').value;
+
+            if (!inicioInput || !finInput) {
+                alert("Por favor selecciona ambas fechas para el rango.");
+                return;
+            }
+            
+            const partsInicio = inicioInput.split('-');
+            const fechaInicio = new Date(partsInicio[0], partsInicio[1] - 1, partsInicio[2]); 
+            
+            const partsFin = finInput.split('-');
+            const fechaFin = new Date(partsFin[0], partsFin[1] - 1, partsFin[2]);
+
+            if (fechaFin < fechaInicio) {
+                alert("La fecha de fin no puede ser anterior a la de inicio.");
+                return;
+            }
+
+            const datos = await generarDatosReporte(fechaInicio, fechaFin);
+            renderizarReporte(datos);
+        }
+
+        // ==========================================
+        // LÓGICA DE LISTADO Y BORRADO (MODIFICADA A RANGO)
+        // ==========================================
+
+        // FUNCIÓN MODIFICADA: Ahora recibe rango de fechas
+        window.listarTransaccionesRango = async function() {
+            if(!db) { alert("Error: Firebase no configurado"); return; }
+            
+            const fechaInicioInput = document.getElementById('fechaInicioLista').value;
+            const fechaFinInput = document.getElementById('fechaFinLista').value;
+
+            if (!fechaInicioInput || !fechaFinInput) {
+                alert("Por favor selecciona ambas fechas para el rango.");
+                return;
+            }
+            
+            document.getElementById('listaTransacciones').innerHTML = "<p>Cargando transacciones...</p>";
+            
+            // Crear objetos Date para el rango
+            const partsInicio = fechaInicioInput.split('-');
+            const fechaInicio = new Date(partsInicio[0], partsInicio[1] - 1, partsInicio[2]); 
+            
+            const partsFin = fechaFinInput.split('-');
+            const fechaFin = new Date(partsFin[0], partsFin[1] - 1, partsFin[2]); 
+
+            // Asegurar comienzo del primer día y fin del último día del rango
+            const start = new Date(fechaInicio); start.setHours(0,0,0,0);
+            const end = new Date(fechaFin); end.setHours(23,59,59,999);
+
+            if (end < start) {
+                alert("La fecha de fin no puede ser anterior a la de inicio.");
+                document.getElementById('listaTransacciones').innerHTML = "<p style='text-align:center;'>Selecciona un rango válido.</p>";
+                return;
+            }
+
+            const q = query(
+                collection(db, "transacciones"),
+                where("fecha", ">=", Timestamp.fromDate(start)),
+                where("fecha", "<=", Timestamp.fromDate(end)),
+                // Ordenamiento requerido por Firebase: Campo de filtro, luego campo cronológico
+                orderBy("fecha", "desc"), 
+                orderBy("creado_el", "desc") 
+            );
+
+            try {
+                const querySnapshot = await getDocs(q);
+                let transacciones = [];
+                querySnapshot.forEach((doc) => {
+                    transacciones.push({ ...doc.data(), id: doc.id }); 
+                });
+                
+                renderizarLista(transacciones);
+
+            } catch (e) {
+                console.error("Error al listar: ", e);
+                document.getElementById('listaTransacciones').innerHTML = `<p style='color: var(--danger); text-align: center;'>
+                    ❌ Error al cargar. Si usas dos orderBy, puede que necesites un Índice Compuesto en Firebase.
+                </p>`;
+            }
+        }
+
+        function renderizarLista(transacciones) {
+            const container = document.getElementById('listaTransacciones');
+            if (transacciones.length === 0) {
+                container.innerHTML = "<p style='text-align:center;'>No se encontraron transacciones en el rango seleccionado.</p>";
+                return;
+            }
+
+            let html = '<div style="margin-top: 1rem; background: white; border-radius: 0.5rem; padding: 0.5rem;">';
+            
+            transacciones.forEach(t => {
+                const fechaDia = t.fecha.toDate().toLocaleDateString('es-CL', { day: '2-digit', month: 'short' });
+                const hora = t.creado_el.toDate().toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'});
+                const montoClase = t.tipo === 'ingreso' ? 'ingreso-text' : 'gasto-text';
+                const montoPrefijo = t.tipo === 'ingreso' ? '+' : '-';
+                
+                html += `
+                <div class="list-item-container">
+                    <div class="list-item-info">
+                        <span class="list-item-time">${fechaDia} ${hora} - </span>
+                        <span class="${montoClase}" style="font-weight: bold; font-size: 1.1rem;">${montoPrefijo}${formatter.format(t.monto)}</span>
+                        <div class="list-item-desc">
+                            ${t.descripcion || 'Sin descripción'} (${t.metodo_pago.toUpperCase()})
+                        </div>
+                    </div>
+                    <button 
+                        class="btn-secondary" 
+                        style="background-color: var(--danger); width: auto;" 
+                        onclick="eliminarTransaccion('${t.id}')">
+                        🗑️ Borrar
+                    </button>
+                </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+
+        window.eliminarTransaccion = async function(docId) {
+            if(!db) { alert("Error: Firebase no configurado"); return; }
+            
+            if (!confirm("⚠️ ¿Estás seguro que deseas eliminar esta transacción? Esta acción es irreversible.")) {
+                return;
+            }
+
+            try {
+                await deleteDoc(doc(db, "transacciones", docId));
+
+                alert("✅ Transacción eliminada exitosamente.");
+                
+                // LLAMADA A LA NUEVA FUNCIÓN PARA RECARGAR EL RANGO
+                listarTransaccionesRango(); 
+
+            } catch (e) {
+                console.error("Error al eliminar: ", e);
+                alert("❌ Error al eliminar la transacción: " + e.message);
+            }
+        }
+    </script>
+</body>
+</html>

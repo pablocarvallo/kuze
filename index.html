@@ -131,7 +131,7 @@
                         <option value="efectivo">💵 Efectivo</option>
                         <option value="tarjeta">💳 Tarjeta Débito/Crédito</option>
                         <option value="transferencia">🏦 Transferencia</option>
-                    </select>
+                        <option value="credito">📝 Crédito</option> </select>
                 </div>
 
                 <div class="form-group">
@@ -338,9 +338,10 @@
 
             const querySnapshot = await getDocs(q);
             
+            // ACTUALIZADO: Se agregó 'credito' a la inicialización para que pueda sumar
             let reporte = {
-                ingreso: { total: 0, tarjeta: 0, efectivo: 0, transferencia: 0, count: 0 },
-                gasto: { total: 0, tarjeta: 0, efectivo: 0, transferencia: 0, count: 0 }
+                ingreso: { total: 0, tarjeta: 0, efectivo: 0, transferencia: 0, credito: 0, count: 0 },
+                gasto: { total: 0, tarjeta: 0, efectivo: 0, transferencia: 0, credito: 0, count: 0 }
             };
 
             querySnapshot.forEach((doc) => {
@@ -368,7 +369,7 @@
 
             let html = '';
 
-            // Tarjeta de INGRESOS
+            // Tarjeta de INGRESOS - ACTUALIZADO con desglose de Crédito
             html += `
             <div class="summary-card card-ingreso">
                 <div class="card-title ingreso-text">🟢 Total Ingresos (${datos.ingreso.count})</div>
@@ -377,10 +378,11 @@
                     <div class="breakdown-item"><span>💵 Efectivo:</span> <span>${formatter.format(datos.ingreso.efectivo)}</span></div>
                     <div class="breakdown-item"><span>💳 Tarjeta:</span> <span>${formatter.format(datos.ingreso.tarjeta)}</span></div>
                     <div class="breakdown-item"><span>🏦 Transferencia:</span> <span>${formatter.format(datos.ingreso.transferencia)}</span></div>
+                    <div class="breakdown-item"><span>📝 Crédito:</span> <span>${formatter.format(datos.ingreso.credito)}</span></div>
                 </div>
             </div>`;
 
-            // Tarjeta de GASTOS
+            // Tarjeta de GASTOS - ACTUALIZADO con desglose de Crédito
             html += `
             <div class="summary-card card-gasto">
                 <div class="card-title gasto-text">🔴 Total Gastos (${datos.gasto.count})</div>
@@ -389,6 +391,7 @@
                     <div class="breakdown-item"><span>💵 Efectivo:</span> <span>${formatter.format(datos.gasto.efectivo)}</span></div>
                     <div class="breakdown-item"><span>💳 Tarjeta:</span> <span>${formatter.format(datos.gasto.tarjeta)}</span></div>
                     <div class="breakdown-item"><span>🏦 Transferencia:</span> <span>${formatter.format(datos.gasto.transferencia)}</span></div>
+                    <div class="breakdown-item"><span>📝 Crédito:</span> <span>${formatter.format(datos.gasto.credito)}</span></div>
                 </div>
             </div>`;
             
@@ -558,4 +561,3 @@
     </script>
 </body>
 </html>
-
